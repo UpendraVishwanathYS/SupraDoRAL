@@ -6,15 +6,18 @@ To install dependencies, create a conda or virtual environment with Python 3 and
 
 # Training:
 (a) To train the Joint Syllable-Word Prominence Model (JSWPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py```. \
-(b) To train the Word-Prominence Detection (WOPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py --classification_model "WOPM" --feature_extraction_level "word"```.
+(b) To train the Word-Prominence Detection (WOPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py --classification_model "WOPM" --feature_extraction_level "word"```. \
+(c) To train the Joint Syllable-Word Prominence Model (JSWPM) on FastSpeech2.0 embeddings simply run ```python3 main.py --feature_type "fast_speech" --fastspeech_type "p_embedding"```. \
+(d) To train the Word-Prominence Detection (WOPM) on FastSpeech2.0 embeddings simply run ```python3 main.py --classification_model "WOPM" --feature_extraction_level "word" --feature_type "fast_speech" --fastspeech_type "p_embedding"```. \
 
 The default values are specified below:
 ```
     parser.add_argument('--w2v2_model_name', type=str, default="facebook/wav2vec2-large-960h")
-    parser.add_argument('--layer_number', type=int, default=-1)
+    parser.add_argument('--w2v2_layer_number', type=int, default=-1)
     parser.add_argument('--path_to_database', type=str, default='./ITA_word_syllable_phone_mapping_dataframe.csv')
     parser.add_argument('--wav_file_path', type=str, default='./wav_final')
     parser.add_argument('--feature_type', type=str, default='w2v2')
+    parser.add_argument('--fastspeech_type', type=str, default='p_embedding')
     parser.add_argument('--embedding_dir', type=str, default=None)
     parser.add_argument('--feature_extraction_level', type=str, default='syl', choices=['syl', 'word'])
     parser.add_argument('--noise_path', type=str, default=None)
