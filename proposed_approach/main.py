@@ -13,7 +13,7 @@ def main():
 
     # Add arguments
     parser.add_argument('--w2v2_model_name', type=str, default="facebook/wav2vec2-large-960h")
-    parser.add_argument('--layer_number', type=int, default=-1)
+    parser.add_argument('--w2v2_layer_number', type=int, default=-1)
     parser.add_argument('--path_to_database', type=str, default='./ITA_word_syllable_phone_mapping_dataframe.csv')
     parser.add_argument('--wav_file_path', type=str, default='./wav_final')
     parser.add_argument('--feature_type', type=str, default='w2v2')
