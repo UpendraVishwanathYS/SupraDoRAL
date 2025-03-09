@@ -6,7 +6,7 @@ To install dependencies, create a conda or virtual environment with Python 3 and
 
 # Training:
 (a) To train the Joint Syllable-Word Prominence Model (JSWPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py```. \
-(b) To train the Word-Prominence Detection (WOPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py --classification_model "WOPM"```.
+(b) To train the Word-Prominence Detection (WOPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py --classification_model "WOPM" --feature_extraction_level "word"```.
 
 The default values are specified below:
 ```
