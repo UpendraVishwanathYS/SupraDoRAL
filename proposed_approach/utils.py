@@ -1,5 +1,11 @@
 from required_libraries import *
 
+def encode(x):
+  if x == 'P':
+    return 1
+  else:
+    return 0
+
 def create_word_level_database(word_syllable_phone_mapping_dataframe):
     """
     Processes the word-syllable-phone mapping DataFrame to extract poly-syllabic word-level data.
