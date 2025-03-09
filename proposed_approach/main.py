@@ -1,6 +1,6 @@
 from required_libraries import *
-from utils import create_syllable_level_database, create_word_level_database 
-from wav2vec2_feature_extraction import W2V2FeatureExtraction
+from utils import create_syllable_level_database, create_word_level_database
+from feature_extraction import W2V2FeatureExtraction, FastSpeechEmbeddingProcessor
 from dataset import DataLoaders
 from masked_cross_entropy import masked_cross_entropy
 from train import train
@@ -10,12 +10,14 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description="Train and evaluate Joint Syllable-Word Prominence Model")
-    
+
     # Add arguments
     parser.add_argument('--w2v2_model_name', type=str, default="facebook/wav2vec2-large-960h")
     parser.add_argument('--layer_number', type=int, default=-1)
     parser.add_argument('--path_to_database', type=str, default='./ITA_word_syllable_phone_mapping_dataframe.csv')
     parser.add_argument('--wav_file_path', type=str, default='./wav_final')
+    parser.add_argument('--feature_type', type=str, default='w2v2')
+    parser.add_argument('--embedding_dir', type=str, default=None)
     parser.add_argument('--feature_extraction_level', type=str, default='syl', choices=['syl', 'word'])
     parser.add_argument('--noise_path', type=str, default=None)
     parser.add_argument('--snr_dB', type=float, default=None)
@@ -25,10 +27,11 @@ def main():
     parser.add_argument('--lstm_num_layers', type=int, default=1)
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=3e-4)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--save_model_chkpts', type=str, default='./best_model.pth')
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--patience', type=int, default=10)
-    
+
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -38,19 +41,24 @@ def main():
     model = Wav2Vec2Model.from_pretrained(args.w2v2_model_name, output_hidden_states=True).to(device)
 
     if args.feature_extraction_level == 'syl':
-        w2v2_database = create_syllable_level_database(word_syllable_phone_mapping_dataframe)
+        database = create_syllable_level_database(word_syllable_phone_mapping_dataframe)
     else:
-        w2v2_database = create_word_level_database(word_syllable_phone_mapping_dataframe)
+        database = create_word_level_database(word_syllable_phone_mapping_dataframe)
 
-    audio_processor = Wav2Vec2FeatureExtraction(
-        w2v2_database, args.feature_extraction_level, model, feature_extractor, device,
-        wav_file_path=args.wav_file_path, noise_path=args.noise_path, snr_dB=args.snr_dB
-    )
+    if args.feature_type == 'fast_speech':
+      processor = FastSpeechEmbeddingProcessor(database, embedding_dir = args.embedding_dir)
+      processor.process_all_files()
+      feature_database = processor.get_dataframe()
+    else:
+        audio_processor = W2V2FeatureExtraction(
+            database, args.feature_extraction_level, model, feature_extractor, device,
+            wav_file_path=args.wav_file_path, noise_path=args.noise_path, snr_dB=args.snr_dB
+        )
 
-    w2v2_database = audio_processor.process_all_files()
-    w2v2_database['Last_layer_W2V2'] = w2v2_database['Feature_Vector'].apply(lambda x: x[args.layer_number, :, :])
+        feature_database = audio_processor.process_all_files()
+        feature_database['Last_layer_W2V2'] = w2v2_database['Feature_Vector'].apply(lambda x: x[args.layer_number, :, :])
 
-    train_loader, val_loader, test_loader, class_weights = DataLoaders(w2v2_database, 'Last_layer_W2V2')
+    train_loader, val_loader, test_loader, class_weights = DataLoaders(feature_database, 'Last_layer_W2V2', batch_size=args.batch_size, device=device)
 
     model = eval(args.classification_model)(args.input_feature_dim, args.hidden_size, args.lstm_num_layers).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
