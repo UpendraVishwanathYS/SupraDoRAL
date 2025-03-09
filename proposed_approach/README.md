@@ -5,7 +5,7 @@ Automatic Word Prominence Detection Using Suprasegmental Dependencies of Represe
 To install dependencies, create a conda or virtual environment with Python 3 and then run ```pip install -r requirements.txt```
 
 # Training:
-(a) To train the Joint Syllable-Word Prominence Model (JSWPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py```.
+(a) To train the Joint Syllable-Word Prominence Model (JSWPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py```. \n
 (b) To train the Word-Prominence Detection (WOPM) on w2v2-large-960h (last layer) features simply run ```python3 main.py --classification_model "WOPM" ```.
 
 The default values are specified below:
