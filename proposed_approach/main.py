@@ -17,6 +17,7 @@ def main():
     parser.add_argument('--path_to_database', type=str, default='./ITA_word_syllable_phone_mapping_dataframe.csv')
     parser.add_argument('--wav_file_path', type=str, default='./wav_final')
     parser.add_argument('--feature_type', type=str, default='w2v2')
+    parser.add_argument('--fastspeech_type', type=str, default='p_embedding')
     parser.add_argument('--embedding_dir', type=str, default=None)
     parser.add_argument('--feature_extraction_level', type=str, default='syl', choices=['syl', 'word'])
     parser.add_argument('--noise_path', type=str, default=None)
@@ -37,8 +38,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     word_syllable_phone_mapping_dataframe = pd.read_csv(args.path_to_database)
-    feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(args.w2v2_model_name, output_hidden_states=True)
-    model = Wav2Vec2Model.from_pretrained(args.w2v2_model_name, output_hidden_states=True).to(device)
+
 
     if args.feature_extraction_level == 'syl':
         database = create_syllable_level_database(word_syllable_phone_mapping_dataframe)
@@ -49,7 +49,10 @@ def main():
       processor = FastSpeechEmbeddingProcessor(database, embedding_dir = args.embedding_dir)
       processor.process_all_files()
       feature_database = processor.get_dataframe()
+      embedding_type = args.fastspeech_type
     else:
+        feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(args.w2v2_model_name, output_hidden_states=True)
+        model = Wav2Vec2Model.from_pretrained(args.w2v2_model_name, output_hidden_states=True).to(device)
         audio_processor = W2V2FeatureExtraction(
             database, args.feature_extraction_level, model, feature_extractor, device,
             wav_file_path=args.wav_file_path, noise_path=args.noise_path, snr_dB=args.snr_dB
@@ -57,8 +60,9 @@ def main():
 
         feature_database = audio_processor.process_all_files()
         feature_database['Last_layer_W2V2'] = w2v2_database['Feature_Vector'].apply(lambda x: x[args.layer_number, :, :])
+        embedding_type = 'Last_layer_W2V2'
 
-    train_loader, val_loader, test_loader, class_weights = DataLoaders(feature_database, 'Last_layer_W2V2', batch_size=args.batch_size, device=device)
+    train_loader, val_loader, test_loader, class_weights = DataLoaders(feature_database, embedding_type, batch_size=args.batch_size, device=device)
 
     model = eval(args.classification_model)(args.input_feature_dim, args.hidden_size, args.lstm_num_layers).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
