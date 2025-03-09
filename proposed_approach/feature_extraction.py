@@ -70,3 +70,45 @@ class W2V2FeatureExtraction:
 
         w2v2_final_results_df['Last_layer_W2V2'] = w2v2_final_results_df['Feature_Vector'].apply(lambda x: x[-1, :, :])
         return w2v2_final_results_df
+
+  
+class FastSpeechEmbeddingProcessor:
+    def __init__(self, mapping_dataframe, embedding_dir):
+        self.mapping_dataframe = mapping_dataframe
+        self.embedding_dir = embedding_dir
+        self.embedding_list = []
+
+    def process_file(self, file_name, file_df):
+        file_df = file_df.copy()
+        file_df['Phone_index'] = range(len(file_df))
+
+        # Load embeddings
+        p_embedding = torch.load(f'{self.embedding_dir}/p/{file_name}.pt')
+        d_embedding = torch.load(f'{self.embedding_dir}/d/{file_name}.pt')
+        e_embedding = torch.load(f'{self.embedding_dir}/e/{file_name}.pt')
+
+        for keys, group in file_df.groupby(['Word', 'Start_word', 'End_word', 'Syllable', 'Start_syl', 'End_syl', 'SylStress', 'Word_Label']):
+            start_idx, end_idx = group['Phone_index'].iloc[0], group['Phone_index'].iloc[-1]
+
+            # Compute mean embeddings
+            p_embed_mean = p_embedding[:, start_idx:end_idx+1, :].mean(1).tolist()
+            d_embed_mean = d_embedding[:, start_idx:end_idx+1, :].mean(1).tolist()
+            e_embed_mean = e_embedding[:, start_idx:end_idx+1, :].mean(1).tolist()
+
+            result_dict = dict(zip(['Word', 'Start_word', 'End_word', 'Syllable', 'Start_syl', 'End_syl', 'SylStress', 'Word_Label'], keys))
+            result_dict.update({
+                'file_name': file_name,
+                'Type': group['Type'].unique().tolist(),
+                'p_embedding': p_embed_mean,
+                'd_embedding': d_embed_mean,
+                'e_embedding': e_embed_mean
+            })
+
+            self.embedding_list.append(result_dict)
+
+    def process_all_files(self):
+        for file_name, file_df in self.mapping_dataframe.groupby('file_name'):
+            self.process_file(file_name, file_df)
+
+    def get_dataframe(self):
+        return pd.DataFrame(self.embedding_list)
