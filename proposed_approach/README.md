@@ -12,11 +12,11 @@ To install dependencies, create a conda or virtual environment with Python 3 and
 
 The default values are specified below:
 ```
-    parser.add_argument('--w2v2_model_name', type=str, default="facebook/wav2vec2-large-960h")
-    parser.add_argument('--w2v2_layer_number', type=int, default=-1)
     parser.add_argument('--path_to_database', type=str, default='./ITA_word_syllable_phone_mapping_dataframe.csv')
     parser.add_argument('--wav_file_path', type=str, default='./wav_final')
     parser.add_argument('--feature_type', type=str, default='w2v2')
+    parser.add_argument('--w2v2_model_name', type=str, default="facebook/wav2vec2-large-960h")
+    parser.add_argument('--w2v2_layer_number', type=int, default=-1)
     parser.add_argument('--fastspeech_type', type=str, default='p_embedding')
     parser.add_argument('--embedding_dir', type=str, default=None)
     parser.add_argument('--feature_extraction_level', type=str, default='syl', choices=['syl', 'word'])
